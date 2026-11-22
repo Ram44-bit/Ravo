@@ -1,0 +1,1235 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ravo: My Brother</title>
+
+  <!-- Inter Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet"
+  />
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'monospace'],
+          },
+          keyframes: {
+            typingBounce: {
+              '0%, 80%, 100%': { transform: 'translateY(0)', opacity: '0.4' },
+              '40%': { transform: 'translateY(-4px)', opacity: '1' },
+            },
+          },
+          animation: {
+            'typing-1': 'typingBounce 1.2s infinite ease-in-out 0s',
+            'typing-2': 'typingBounce 1.2s infinite ease-in-out 0.15s',
+            'typing-3': 'typingBounce 1.2s infinite ease-in-out 0.3s',
+          },
+        },
+      },
+    };
+  </script>
+</head>
+
+<body class="bg-zinc-950 text-zinc-100 font-sans antialiased h-screen overflow-hidden flex selection:bg-emerald-500/30 selection:text-emerald-200">
+  <!-- Mobile Sidebar Backdrop -->
+  <div
+    id="sidebarBackdrop"
+    class="fixed inset-0 bg-black/60 z-30 hidden lg:hidden transition-opacity duration-200"
+    aria-hidden="true"
+  ></div>
+
+  <!-- Collapsible Left Sidebar -->
+  <aside
+    id="sidebar"
+    class="fixed lg:static inset-y-0 left-0 z-40 w-72 bg-zinc-900 border-r border-zinc-800 flex flex-col transition-all duration-200 -translate-x-full lg:translate-x-0 shrink-0"
+    aria-label="Chat history"
+  >
+    <!-- Sidebar Header: New Chat & Close -->
+    <div class="p-3 border-b border-zinc-800 flex items-center gap-2">
+      <button
+        id="newChatBtn"
+        type="button"
+        class="flex-1 flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold transition-colors cursor-pointer"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+        </svg>
+        <span>New Chat</span>
+      </button>
+
+      <!-- Mobile Close Sidebar Button -->
+      <button
+        id="closeSidebarMobileBtn"
+        type="button"
+        class="lg:hidden p-2.5 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
+        aria-label="Close sidebar"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- Saved Conversations List -->
+    <div class="flex-1 overflow-y-auto p-2.5 space-y-1">
+      <div class="px-2.5 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+        Conversations
+      </div>
+      <div id="chatList" class="space-y-1">
+        <!-- Populated dynamically from localStorage -->
+      </div>
+      <div id="emptyHistoryNotice" class="hidden px-3 py-6 text-center text-xs text-zinc-500">
+        No saved chats yet. Start a new conversation!
+      </div>
+    </div>
+
+    <!-- Sidebar Footer -->
+    <div class="p-3 border-t border-zinc-800 flex items-center justify-between text-xs text-zinc-400">
+      <div class="flex items-center gap-2 min-w-0">
+        <div class="w-7 h-7 rounded-lg bg-emerald-600/20 border border-emerald-500/30 text-emerald-400 flex items-center justify-center font-bold shrink-0">
+          N
+        </div>
+        <div class="truncate">
+          <p class="font-semibold text-zinc-200 truncate">Ravo </p>
+          <p class="text-[11px] text-zinc-500 truncate">Ravo</p>
+        </div>
+      </div>
+      <span class="px-2 py-0.5 rounded-md bg-zinc-800 text-zinc-400 text-[10px] font-medium">
+        Local
+      </span>
+    </div>
+  </aside>
+
+  <!-- Main Workspace -->
+  <div class="flex-1 flex flex-col min-w-0 h-screen bg-zinc-950">
+    <!-- Top Header -->
+    <header class="h-14 border-b border-zinc-800 bg-zinc-950 px-3 sm:px-5 flex items-center justify-between gap-3 shrink-0">
+      <div class="flex items-center gap-2 sm:gap-3 min-w-0">
+        <!-- Mobile Hamburger Menu Toggle -->
+        <button
+          id="mobileMenuBtn"
+          type="button"
+          class="lg:hidden p-2.5 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
+          aria-label="Open menu"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+
+        <!-- Desktop Sidebar Collapse Toggle -->
+        <button
+          id="desktopSidebarToggle"
+          type="button"
+          class="hidden lg:inline-flex p-2 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
+          title="Toggle sidebar"
+          aria-label="Toggle sidebar"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+            <rect x="3" y="4" width="18" height="16" rx="2" />
+            <path d="M9 4v16" />
+          </svg>
+        </button>
+
+        <!-- Persona / Mode Selector Dropdown -->
+        <div class="relative flex items-center">
+          <label for="personaSelect" class="sr-only">Select AI Persona</label>
+          <select
+            id="personaSelect"
+            class="appearance-none bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-100 text-xs sm:text-sm font-medium rounded-xl pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-colors cursor-pointer"
+          >
+            <option value="general">✨ Boss What you! want</option>
+            <option value="coding">💻 Can we Written somethings</option>
+            <option value="creative">✍️ Can we Change</option>
+          </select>
+          <svg
+            class="w-4 h-4 text-zinc-400 pointer-events-none absolute right-2.5"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+      </div>
+
+      <!-- Right Header Action: Clear Current Chat -->
+      <div class="flex items-center gap-2">
+        <button
+          id="headerClearBtn"
+          type="button"
+          class="hidden items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium text-zinc-400 hover:text-rose-300 hover:bg-zinc-900 border border-transparent hover:border-zinc-800 transition-colors"
+          title="Clear messages in this chat"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+          <span class="hidden sm:inline">Clear Chat</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Scrollable Chat Messages Area -->
+    <main id="chatContainer" class="flex-1 overflow-y-auto px-4 sm:px-6 py-6">
+      <div class="max-w-3xl mx-auto w-full flex flex-col min-h-full">
+        <!-- Empty State with 4 Starter Prompt Cards -->
+        <div id="emptyState" class="flex-1 flex flex-col items-center justify-center py-8 text-center">
+          <div class="w-14 h-14 rounded-2xl bg-emerald-600/15 border border-emerald-500/30 flex items-center justify-center text-2xl mb-4">
+            ✨
+          </div>
+          <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-white">
+            How can I help you today?
+          </h1>
+          <p id="emptyPersonaDesc" class="text-sm text-zinc-400 mt-2 max-w-md">
+            Ask a question, debug code, brainstorm ideas, or explore any topic.
+          </p>
+
+          <!-- 4 Clickable Starter Prompt Cards -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full mt-8 text-left">
+            <button
+              type="button"
+              data-prompt="Explain how async/await works in JavaScript with a clear, practical example."
+              class="starter-card group p-4 rounded-2xl bg-zinc-900 hover:bg-zinc-800/90 border border-zinc-800 hover:border-zinc-700 transition-colors cursor-pointer"
+            >
+              <div class="flex items-center gap-2 text-sm font-semibold text-zinc-100">
+                <span>💡</span>
+                <span>Explain a coding concept</span>
+              </div>
+              <p class="text-xs text-zinc-400 mt-1.5 leading-relaxed">
+                How async/await works in JavaScript with a practical example
+              </p>
+            </button>
+
+            <button
+              type="button"
+              data-prompt="Write a clean Python script that organizes files in a folder by their file extension."
+              class="starter-card group p-4 rounded-2xl bg-zinc-900 hover:bg-zinc-800/90 border border-zinc-800 hover:border-zinc-700 transition-colors cursor-pointer"
+            >
+              <div class="flex items-center gap-2 text-sm font-semibold text-zinc-100">
+                <span>🐍</span>
+                <span>Write a Python script</span>
+              </div>
+              <p class="text-xs text-zinc-400 mt-1.5 leading-relaxed">
+                Organize files in a directory automatically by file extension
+              </p>
+            </button>
+
+            <button
+              type="button"
+              data-prompt="Brainstorm 5 unique weekend web app project ideas that use HTML, CSS, and vanilla JavaScript."
+              class="starter-card group p-4 rounded-2xl bg-zinc-900 hover:bg-zinc-800/90 border border-zinc-800 hover:border-zinc-700 transition-colors cursor-pointer"
+            >
+              <div class="flex items-center gap-2 text-sm font-semibold text-zinc-100">
+                <span>🚀</span>
+                <span>Brainstorm project ideas</span>
+              </div>
+              <p class="text-xs text-zinc-400 mt-1.5 leading-relaxed">
+                5 creative weekend web app ideas using HTML, CSS &amp; JS
+              </p>
+            </button>
+
+            <button
+              type="button"
+              data-prompt="Summarize how Large Language Models work in simple terms with 5 key bullet points."
+              class="starter-card group p-4 rounded-2xl bg-zinc-900 hover:bg-zinc-800/90 border border-zinc-800 hover:border-zinc-700 transition-colors cursor-pointer"
+            >
+              <div class="flex items-center gap-2 text-sm font-semibold text-zinc-100">
+                <span>📚</span>
+                <span>Summarize a topic</span>
+              </div>
+              <p class="text-xs text-zinc-400 mt-1.5 leading-relaxed">
+                How Large Language Models work in 5 simple bullet points
+              </p>
+            </button>
+          </div>
+        </div>
+
+        <!-- Active Messages List -->
+        <div id="messagesList" class="hidden space-y-6 pb-4">
+          <!-- Messages rendered dynamically -->
+        </div>
+      </div>
+    </main>
+
+    <!-- Sticky Bottom Input Area -->
+    <div class="border-t border-zinc-800/80 bg-zinc-950 px-3 sm:px-6 py-3 sm:py-4 shrink-0">
+      <div class="max-w-3xl mx-auto w-full">
+        <!-- Inline Error Banner (replaces alert()) -->
+        <div
+          id="inlineError"
+          class="hidden mb-3 px-4 py-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-200 text-xs sm:text-sm flex items-start justify-between gap-3"
+          role="alert"
+        >
+          <div class="flex items-start gap-2.5">
+            <span class="shrink-0">⚠️</span>
+            <span id="inlineErrorText">Something went wrong. Please try again.</span>
+          </div>
+          <button
+            id="dismissErrorBtn"
+            type="button"
+            class="text-rose-300 hover:text-white px-1.5 py-0.5 rounded-lg hover:bg-rose-500/20"
+            aria-label="Dismiss error"
+          >
+            ✕
+          </button>
+        </div>
+
+        <!-- Input Box Wrapper -->
+        <div class="bg-zinc-900 border border-zinc-800 focus-within:border-zinc-600 rounded-2xl p-2 flex items-end gap-2 transition-colors">
+          <textarea
+            id="messageInput"
+            rows="1"
+            placeholder="Message NovaChat AI..."
+            class="flex-1 bg-transparent text-zinc-100 placeholder-zinc-500 text-sm sm:text-base px-2.5 py-2 resize-none focus:outline-none max-h-40 overflow-y-auto leading-relaxed"
+          ></textarea>
+
+          <!-- Stop Generating Button (Visible only while generating) -->
+          <button
+            id="stopBtn"
+            type="button"
+            class="hidden items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-100 text-xs sm:text-sm font-semibold transition-colors shrink-0 cursor-pointer"
+            title="Stop generating"
+          >
+            <span class="w-2.5 h-2.5 rounded-sm bg-rose-400"></span>
+            <span>Stop</span>
+          </button>
+
+          <!-- Send Button -->
+          <button
+            id="sendBtn"
+            type="button"
+            disabled
+            class="p-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:bg-zinc-800 disabled:text-zinc-600 disabled:cursor-not-allowed text-white transition-colors shrink-0 cursor-pointer"
+            title="Send message (Enter)"
+            aria-label="Send message"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M12 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+
+        <div class="mt-2 flex items-center justify-between px-1 text-[11px] text-zinc-500">
+          <span>Enter to send • Shift + Enter for new line</span>
+          <span>Powered by Gemini API</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lightweight Toast Notification -->
+  <div
+    id="toast"
+    class="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 hidden px-4 py-2 rounded-xl bg-zinc-800 border border-zinc-700 text-zinc-100 text-xs font-medium shadow-lg"
+    role="status"
+    aria-live="polite"
+  ></div>
+
+  <script>
+    /**
+     * NovaChat AI — Single-File ChatGPT-Style Chatbot powered by Gemini API
+     * Features: multi-turn history, localStorage persistence, persona selector,
+     * lightweight Markdown renderer with copyable code blocks, and exponential backoff.
+     */
+    (function () {
+      'use strict';
+
+      // =========================================================================
+      // 1. CONFIGURATION & PERSONAS
+      // =========================================================================
+      const API_KEY = 'AQ.Ab8RN6KomeKLRm2q63xZMVl6HhzqEZ_BAAd9-N08i-h0zk0y-g'; // Automatically injected at runtime
+      const MODEL_NAME = 'gemini-3-flash-preview';
+      const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${API_KEY}`;
+      const STORAGE_KEY = 'novachat_ai_sessions_v1';
+
+      const PERSONAS = {
+        general: {
+          name: 'General Assistant',
+          desc: 'Ask a question, debug code, brainstorm ideas, or explore any topic.',
+          systemPrompt:
+            'You are NovaChat, a helpful, clear, and concise AI assistant. Use clean Markdown formatting (headings, bullet points, and fenced code blocks with language tags when showing code) to make your answers easy to read.',
+        },
+        coding: {
+          name: 'Coding Tutor',
+          desc: 'Step-by-step programming guidance, clean examples, and debugging help.',
+          systemPrompt:
+            'You are an expert Coding Tutor. Explain programming concepts clearly and patiently, provide well-commented, idiomatic code examples inside fenced Markdown code blocks with language labels, and highlight best practices and common pitfalls.',
+        },
+        creative: {
+          name: 'Creative Writer',
+          desc: 'Craft engaging stories, brainstorm imaginative ideas, and polish prose.',
+          systemPrompt:
+            'You are an imaginative Creative Writer and editor. Craft vivid, engaging, and expressive writing tailored to the user’s tone and genre. Offer thoughtful creative suggestions when asked.',
+        },
+      };
+
+      // =========================================================================
+      // 2. APPLICATION STATE
+      // =========================================================================
+      const state = {
+        chats: [], // Array of { id, title, persona, updatedAt, messages: [{ role: 'user'|'model', text, timestamp }] }
+        activeChatId: null,
+        isGenerating: false,
+        abortController: null,
+        sidebarCollapsedDesktop: false,
+      };
+
+      // =========================================================================
+      // 3. DOM REFERENCES
+      // =========================================================================
+      const els = {
+        sidebar: document.getElementById('sidebar'),
+        sidebarBackdrop: document.getElementById('sidebarBackdrop'),
+        newChatBtn: document.getElementById('newChatBtn'),
+        closeSidebarMobileBtn: document.getElementById('closeSidebarMobileBtn'),
+        mobileMenuBtn: document.getElementById('mobileMenuBtn'),
+        desktopSidebarToggle: document.getElementById('desktopSidebarToggle'),
+        chatList: document.getElementById('chatList'),
+        emptyHistoryNotice: document.getElementById('emptyHistoryNotice'),
+
+        personaSelect: document.getElementById('personaSelect'),
+        headerClearBtn: document.getElementById('headerClearBtn'),
+
+        chatContainer: document.getElementById('chatContainer'),
+        emptyState: document.getElementById('emptyState'),
+        emptyPersonaDesc: document.getElementById('emptyPersonaDesc'),
+        messagesList: document.getElementById('messagesList'),
+
+        inlineError: document.getElementById('inlineError'),
+        inlineErrorText: document.getElementById('inlineErrorText'),
+        dismissErrorBtn: document.getElementById('dismissErrorBtn'),
+
+        messageInput: document.getElementById('messageInput'),
+        sendBtn: document.getElementById('sendBtn'),
+        stopBtn: document.getElementById('stopBtn'),
+        toast: document.getElementById('toast'),
+      };
+
+      // =========================================================================
+      // 4. STORAGE & CHAT SESSION MANAGEMENT
+      // =========================================================================
+
+      /**
+       * Generate a unique session ID.
+       */
+      function createId() {
+        return 'chat_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 7);
+      }
+
+      /**
+       * Load saved chats from localStorage safely.
+       */
+      function loadChats() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) {
+              state.chats = parsed;
+            }
+          }
+        } catch (err) {
+          state.chats = [];
+        }
+
+        if (state.chats.length === 0) {
+          createNewChat(false);
+        } else {
+          state.activeChatId = state.chats[0].id;
+        }
+      }
+
+      /**
+       * Persist chats to localStorage.
+       */
+      function saveChats() {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(state.chats));
+        } catch (err) {
+          // Ignore storage quota errors gracefully
+        }
+      }
+
+      /**
+       * Get the currently active chat session object.
+       */
+      function getActiveChat() {
+        return state.chats.find((c) => c.id === state.activeChatId) || null;
+      }
+
+      /**
+       * Create a new blank conversation and make it active.
+       */
+      function createNewChat(shouldRender = true) {
+        if (state.isGenerating) {
+          stopGeneration();
+        }
+        const selectedPersona = els.personaSelect ? els.personaSelect.value : 'general';
+        const newChat = {
+          id: createId(),
+          title: 'New Chat',
+          persona: PERSONAS[selectedPersona] ? selectedPersona : 'general',
+          updatedAt: Date.now(),
+          messages: [],
+        };
+        state.chats.unshift(newChat);
+        state.activeChatId = newChat.id;
+        saveChats();
+
+        if (shouldRender) {
+          hideError();
+          renderSidebar();
+          renderActiveChat();
+          closeMobileSidebar();
+          els.messageInput.focus();
+        }
+      }
+
+      /**
+       * Switch to an existing chat by ID.
+       */
+      function selectChat(chatId) {
+        if (chatId === state.activeChatId) {
+          closeMobileSidebar();
+          return;
+        }
+        if (state.isGenerating) {
+          stopGeneration();
+        }
+        state.activeChatId = chatId;
+        hideError();
+        renderSidebar();
+        renderActiveChat();
+        closeMobileSidebar();
+      }
+
+      /**
+       * Delete a saved chat by ID.
+       */
+      function deleteChat(chatId) {
+        if (chatId === state.activeChatId && state.isGenerating) {
+          stopGeneration();
+        }
+        state.chats = state.chats.filter((c) => c.id !== chatId);
+        if (state.chats.length === 0) {
+          createNewChat(false);
+        } else if (state.activeChatId === chatId) {
+          state.activeChatId = state.chats[0].id;
+        }
+        saveChats();
+        renderSidebar();
+        renderActiveChat();
+        showToast('Conversation deleted');
+      }
+
+      /**
+       * Clear all messages in the current chat session.
+       */
+      function clearActiveChat() {
+        const chat = getActiveChat();
+        if (!chat || chat.messages.length === 0) return;
+        if (state.isGenerating) {
+          stopGeneration();
+        }
+        chat.messages = [];
+        chat.title = 'New Chat';
+        chat.updatedAt = Date.now();
+        saveChats();
+        hideError();
+        renderSidebar();
+        renderActiveChat();
+        showToast('Chat cleared');
+      }
+
+      // =========================================================================
+      // 5. LIGHTWEIGHT MARKDOWN RENDERER & CLIPBOARD HELPER
+      // =========================================================================
+
+      /**
+       * Escape raw HTML characters to prevent XSS before Markdown formatting.
+       */
+      function escapeHtml(str) {
+        return str
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
+
+      /**
+       * Copy text to clipboard using document.execCommand('copy') for iFrame compatibility.
+       */
+      function copyToClipboard(text) {
+        const temp = document.createElement('textarea');
+        temp.value = text;
+        temp.setAttribute('readonly', '');
+        temp.style.position = 'fixed';
+        temp.style.opacity = '0';
+        temp.style.left = '-9999px';
+        document.body.appendChild(temp);
+        temp.select();
+        let ok = false;
+        try {
+          ok = document.execCommand('copy');
+        } catch (err) {
+          ok = false;
+        }
+        document.body.removeChild(temp);
+        return ok;
+      }
+
+      /**
+       * Format inline markdown: inline code, bold, italic, and safe links.
+       */
+      function formatInlineMarkdown(escapedText) {
+        const inlineCodes = [];
+        // Protect inline code spans first
+        let text = escapedText.replace(/`([^`\n]+)`/g, (_, code) => {
+          const idx = inlineCodes.length;
+          inlineCodes.push(
+            `<code class="px-1.5 py-0.5 rounded-md bg-zinc-800 border border-zinc-700/80 text-emerald-300 font-mono text-[0.85em]">${code}</code>`
+          );
+          return `@@INLINECODE_${idx}@@`;
+        });
+
+        // Bold + Italic, Bold, Italic
+        text = text.replace(/\*\*\*([^*]+)\*\*\*/g, '<strong class="font-semibold text-white"><em>$1</em></strong>');
+        text = text.replace(/\*\*([^*]+)\*\*/g, '<strong class="font-semibold text-white">$1</strong>');
+        text = text.replace(/(^|[^\*])\*([^*\n]+)\*/g, '$1<em class="italic text-zinc-200">$2</em>');
+
+        // Safe HTTP/HTTPS Markdown links
+        text = text.replace(
+          /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
+          '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-emerald-400 hover:text-emerald-300 underline underline-offset-2">$1</a>'
+        );
+
+        // Restore inline code
+        text = text.replace(/@@INLINECODE_(\d+)@@/g, (_, idx) => inlineCodes[Number(idx)]);
+        return text;
+      }
+
+      /**
+       * Convert Markdown string into clean, styled HTML with copyable fenced code blocks.
+       */
+      function renderMarkdown(markdown) {
+        const codeBlocks = [];
+        // 1. Extract fenced code blocks before escaping the rest
+        const normalized = (markdown || '').replace(/\r\n/g, '\n');
+        const withPlaceholders = normalized.replace(/```([a-zA-Z0-9_+-]*)\n?([\s\S]*?)```/g, (_, lang, code) => {
+          const idx = codeBlocks.length;
+          const cleanCode = code.replace(/\n$/, '');
+          codeBlocks.push({
+            lang: (lang || 'code').trim(),
+            raw: cleanCode,
+          });
+          return `\n@@CODEBLOCK_${idx}@@\n`;
+        });
+
+        // 2. Parse lines into structured blocks (headings, lists, blockquotes, paragraphs)
+        const lines = withPlaceholders.split('\n');
+        const htmlParts = [];
+        let listType = null; // 'ul' | 'ol' | null
+
+        function closeList() {
+          if (listType) {
+            htmlParts.push(`</${listType}>`);
+            listType = null;
+          }
+        }
+
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i];
+          const trimmed = line.trim();
+
+          // Check for code block placeholder
+          const cbMatch = trimmed.match(/^@@CODEBLOCK_(\d+)@@$/);
+          if (cbMatch) {
+            closeList();
+            const block = codeBlocks[Number(cbMatch[1])];
+            const encodedRaw = encodeURIComponent(block.raw);
+            htmlParts.push(`
+              <div class="my-3 rounded-xl overflow-hidden border border-zinc-800 bg-zinc-950">
+                <div class="flex items-center justify-between px-3.5 py-2 bg-zinc-900 border-b border-zinc-800 text-xs text-zinc-400">
+                  <span class="font-mono uppercase tracking-wider text-[11px]">${escapeHtml(block.lang)}</span>
+                  <button
+                    type="button"
+                    data-copy-code="${encodedRaw}"
+                    class="copy-code-btn inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-medium transition-colors cursor-pointer"
+                  >
+                    <span>Copy Code</span>
+                  </button>
+                </div>
+                <pre class="p-3.5 overflow-x-auto text-xs sm:text-[13px] leading-relaxed font-mono text-zinc-200"><code>${escapeHtml(block.raw)}</code></pre>
+              </div>
+            `);
+            continue;
+          }
+
+          if (!trimmed) {
+            closeList();
+            continue;
+          }
+
+          // Horizontal Rule
+          if (/^(-{3,}|\*{3,})$/.test(trimmed)) {
+            closeList();
+            htmlParts.push('<hr class="my-4 border-zinc-800" />');
+            continue;
+          }
+
+          // Headings
+          const headingMatch = trimmed.match(/^(#{1,4})\s+(.+)$/);
+          if (headingMatch) {
+            closeList();
+            const level = headingMatch[1].length;
+            const sizes = {
+              1: 'text-xl font-bold text-white mt-4 mb-2',
+              2: 'text-lg font-bold text-white mt-4 mb-2',
+              3: 'text-base font-semibold text-white mt-3 mb-1.5',
+              4: 'text-sm font-semibold text-zinc-100 mt-3 mb-1',
+            };
+            htmlParts.push(
+              `<h${level} class="${sizes[level]}">${formatInlineMarkdown(escapeHtml(headingMatch[2]))}</h${level}>`
+            );
+            continue;
+          }
+
+          // Blockquote
+          const quoteMatch = trimmed.match(/^>\s?(.*)$/);
+          if (quoteMatch) {
+            closeList();
+            htmlParts.push(
+              `<blockquote class="my-2.5 pl-3.5 border-l-2 border-emerald-500/60 text-zinc-300 italic text-sm">${formatInlineMarkdown(escapeHtml(quoteMatch[1]))}</blockquote>`
+            );
+            continue;
+          }
+
+          // Unordered list item
+          const ulMatch = trimmed.match(/^[-*•]\s+(.+)$/);
+          if (ulMatch) {
+            if (listType !== 'ul') {
+              closeList();
+              listType = 'ul';
+              htmlParts.push('<ul class="my-2.5 pl-5 list-disc space-y-1.5 text-zinc-200">');
+            }
+            htmlParts.push(`<li class="leading-relaxed">${formatInlineMarkdown(escapeHtml(ulMatch[1]))}</li>`);
+            continue;
+          }
+
+          // Ordered list item
+          const olMatch = trimmed.match(/^\d+\.\s+(.+)$/);
+          if (olMatch) {
+            if (listType !== 'ol') {
+              closeList();
+              listType = 'ol';
+              htmlParts.push('<ol class="my-2.5 pl-5 list-decimal space-y-1.5 text-zinc-200">');
+            }
+            htmlParts.push(`<li class="leading-relaxed">${formatInlineMarkdown(escapeHtml(olMatch[1]))}</li>`);
+            continue;
+          }
+
+          // Standard paragraph
+          closeList();
+          htmlParts.push(`<p class="my-2 leading-relaxed text-zinc-200">${formatInlineMarkdown(escapeHtml(line))}</p>`);
+        }
+
+        closeList();
+        return htmlParts.join('');
+      }
+
+      // =========================================================================
+      // 6. UI RENDERING
+      // =========================================================================
+
+      /**
+       * Render the sidebar conversation list.
+       */
+      function renderSidebar() {
+        els.chatList.innerHTML = '';
+
+        if (state.chats.length === 0) {
+          els.emptyHistoryNotice.classList.remove('hidden');
+          return;
+        }
+        els.emptyHistoryNotice.classList.add('hidden');
+
+        state.chats.forEach((chat) => {
+          const isActive = chat.id === state.activeChatId;
+          const row = document.createElement('div');
+          row.className = `group flex items-center gap-1 rounded-xl px-2.5 py-2 text-sm transition-colors cursor-pointer ${
+            isActive
+              ? 'bg-zinc-800 text-white font-medium'
+              : 'text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-200'
+          }`;
+
+          const titleBtn = document.createElement('button');
+          titleBtn.type = 'button';
+          titleBtn.className = 'flex-1 flex items-center gap-2.5 min-w-0 text-left py-0.5';
+          titleBtn.innerHTML = `
+            <svg class="w-4 h-4 shrink-0 ${isActive ? 'text-emerald-400' : 'text-zinc-500'}" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M8 10h8M8 14h5m-9 6l1.5-4.5A8.5 8.5 0 1112 20.5a8.4 8.4 0 01-4.5-1.3L4 20z" />
+            </svg>
+            <span class="truncate text-xs sm:text-sm">${escapeHtml(chat.title)}</span>
+          `;
+          titleBtn.addEventListener('click', () => selectChat(chat.id));
+
+          const delBtn = document.createElement('button');
+          delBtn.type = 'button';
+          delBtn.className =
+            'p-1.5 rounded-lg text-zinc-500 hover:text-rose-400 hover:bg-zinc-700/70 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 transition-opacity shrink-0';
+          delBtn.title = 'Delete chat';
+          delBtn.setAttribute('aria-label', 'Delete chat');
+          delBtn.innerHTML = `
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          `;
+          delBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            deleteChat(chat.id);
+          });
+
+          row.appendChild(titleBtn);
+          row.appendChild(delBtn);
+          els.chatList.appendChild(row);
+        });
+      }
+
+      /**
+       * Render the active chat's messages or the welcoming empty state.
+       */
+      function renderActiveChat() {
+        const chat = getActiveChat();
+        if (!chat) return;
+
+        // Sync persona dropdown with active chat
+        els.personaSelect.value = PERSONAS[chat.persona] ? chat.persona : 'general';
+        const personaMeta = PERSONAS[els.personaSelect.value];
+        els.emptyPersonaDesc.textContent = personaMeta.desc;
+
+        if (chat.messages.length === 0 && !state.isGenerating) {
+          els.emptyState.classList.remove('hidden');
+          els.messagesList.classList.add('hidden');
+          els.messagesList.innerHTML = '';
+          els.headerClearBtn.classList.add('hidden');
+          els.headerClearBtn.classList.remove('inline-flex');
+          return;
+        }
+
+        els.emptyState.classList.add('hidden');
+        els.messagesList.classList.remove('hidden');
+        els.headerClearBtn.classList.remove('hidden');
+        els.headerClearBtn.classList.add('inline-flex');
+
+        els.messagesList.innerHTML = '';
+        chat.messages.forEach((msg) => {
+          els.messagesList.appendChild(createMessageNode(msg));
+        });
+
+        if (state.isGenerating) {
+          els.messagesList.appendChild(createTypingIndicatorNode());
+        }
+
+        scrollToBottom();
+      }
+
+      /**
+       * Create a DOM element for a single user or AI message.
+       */
+      function createMessageNode(msg) {
+        const wrapper = document.createElement('div');
+        const isUser = msg.role === 'user';
+
+        if (isUser) {
+          wrapper.className = 'flex justify-end';
+          wrapper.innerHTML = `
+            <div class="max-w-[85%] sm:max-w-[78%] rounded-2xl rounded-br-md bg-zinc-800 border border-zinc-700/70 px-4 py-3 text-sm sm:text-[15px] text-zinc-100 leading-relaxed whitespace-pre-wrap break-words">
+              ${escapeHtml(msg.text)}
+            </div>
+          `;
+        } else {
+          wrapper.className = 'flex items-start gap-3 sm:gap-3.5';
+          wrapper.innerHTML = `
+            <div class="w-8 h-8 rounded-xl bg-emerald-600/20 border border-emerald-500/30 text-emerald-400 flex items-center justify-center text-sm shrink-0 mt-0.5">
+              ✨
+            </div>
+            <div class="flex-1 min-w-0 text-sm sm:text-[15px] break-words">
+              ${renderMarkdown(msg.text)}
+            </div>
+          `;
+        }
+        return wrapper;
+      }
+
+      /**
+       * Create an animated typing indicator bubble while waiting for Gemini.
+       */
+      function createTypingIndicatorNode() {
+        const wrapper = document.createElement('div');
+        wrapper.id = 'typingIndicator';
+        wrapper.className = 'flex items-start gap-3 sm:gap-3.5';
+        wrapper.innerHTML = `
+          <div class="w-8 h-8 rounded-xl bg-emerald-600/20 border border-emerald-500/30 text-emerald-400 flex items-center justify-center text-sm shrink-0 mt-0.5">
+            ✨
+          </div>
+          <div class="inline-flex items-center gap-1.5 px-4 py-3 rounded-2xl bg-zinc-900 border border-zinc-800">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-typing-1"></span>
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-typing-2"></span>
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-typing-3"></span>
+          </div>
+        `;
+        return wrapper;
+      }
+
+      /**
+       * Smoothly scroll the chat viewport to the latest message.
+       */
+      function scrollToBottom() {
+        requestAnimationFrame(() => {
+          els.chatContainer.scrollTop = els.chatContainer.scrollHeight;
+        });
+      }
+
+      /**
+       * Show an inline error banner above the input box.
+       */
+      function showError(message) {
+        els.inlineErrorText.textContent = message;
+        els.inlineError.classList.remove('hidden');
+      }
+
+      /**
+       * Hide the inline error banner.
+       */
+      function hideError() {
+        els.inlineError.classList.add('hidden');
+      }
+
+      /**
+       * Show a brief non-blocking toast notification.
+       */
+      let toastTimer = null;
+      function showToast(message) {
+        els.toast.textContent = message;
+        els.toast.classList.remove('hidden');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => {
+          els.toast.classList.add('hidden');
+        }, 2000);
+      }
+
+      /**
+       * Auto-resize textarea based on content height.
+       */
+      function autoResizeTextarea() {
+        els.messageInput.style.height = 'auto';
+        els.messageInput.style.height = Math.min(els.messageInput.scrollHeight, 160) + 'px';
+        updateSendButtonState();
+      }
+
+      /**
+       * Enable/disable send button based on input text & generation status.
+       */
+      function updateSendButtonState() {
+        const hasText = els.messageInput.value.trim().length > 0;
+        els.sendBtn.disabled = !hasText || state.isGenerating;
+      }
+
+      /**
+       * Toggle UI controls between idle and generating states.
+       */
+      function setGeneratingUI(isGenerating) {
+        state.isGenerating = isGenerating;
+        if (isGenerating) {
+          els.sendBtn.classList.add('hidden');
+          els.stopBtn.classList.remove('hidden');
+          els.stopBtn.classList.add('inline-flex');
+        } else {
+          els.stopBtn.classList.add('hidden');
+          els.stopBtn.classList.remove('inline-flex');
+          els.sendBtn.classList.remove('hidden');
+        }
+        updateSendButtonState();
+      }
+
+      // =========================================================================
+      // 7. GEMINI API INTEGRATION (WITH EXPONENTIAL BACKOFF)
+      // =========================================================================
+
+      /**
+       * Call Gemini generateContent API with multi-turn history, system prompt,
+       * AbortController support, and exponential backoff (1s, 2s, 4s, 8s, 16s).
+       */
+      async function fetchGeminiReply(messages, systemPrompt, signal) {
+        const payload = {
+          contents: messages.map((m) => ({
+            role: m.role === 'user' ? 'user' : 'model',
+            parts: [{ text: m.text }],
+          })),
+          systemInstruction: {
+            parts: [{ text: systemPrompt }],
+          },
+        };
+
+        const maxRetries = 5;
+        let delayMs = 1000;
+
+        for (let attempt = 0; attempt <= maxRetries; attempt++) {
+          if (signal.aborted) {
+            throw new DOMException('Request aborted by user', 'AbortError');
+          }
+
+          try {
+            const response = await fetch(API_URL, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload),
+              signal,
+            });
+
+            // Retry on rate limit (429) or transient server errors (5xx)
+            if ((response.status === 429 || response.status >= 500) && attempt < maxRetries) {
+              await waitWithAbort(delayMs, signal);
+              delayMs *= 2;
+              continue;
+            }
+
+            if (!response.ok) {
+              let detail = `HTTP ${response.status}`;
+              try {
+                const errJson = await response.json();
+                if (errJson?.error?.message) detail = errJson.error.message;
+              } catch (_) {}
+              throw new Error(`API request failed (${detail}).`);
+            }
+
+            const result = await response.json();
+            const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (!text) {
+              throw new Error('The AI returned an empty response. Please try rephrasing your prompt.');
+            }
+            return text;
+          } catch (err) {
+            if (err.name === 'AbortError') {
+              throw err;
+            }
+            if (attempt < maxRetries) {
+              await waitWithAbort(delayMs, signal);
+              delayMs *= 2;
+              continue;
+            }
+            throw err;
+          }
+        }
+      }
+
+      /**
+       * Sleep helper that respects an AbortSignal.
+       */
+      function waitWithAbort(ms, signal) {
+        return new Promise((resolve, reject) => {
+          if (signal.aborted) {
+            reject(new DOMException('Aborted', 'AbortError'));
+            return;
+          }
+          const timer = setTimeout(() => {
+            signal.removeEventListener('abort', onAbort);
+            resolve();
+          }, ms);
+          function onAbort() {
+            clearTimeout(timer);
+            reject(new DOMException('Aborted', 'AbortError'));
+          }
+          signal.addEventListener('abort', onAbort, { once: true });
+        });
+      }
+
+      /**
+       * Send user message and request a response from Gemini.
+       */
+      async function sendMessage(overrideText = null) {
+        if (state.isGenerating) return;
+
+        const text = (overrideText !== null ? overrideText : els.messageInput.value).trim();
+        if (!text) return;
+
+        const chat = getActiveChat();
+        if (!chat) return;
+
+        hideError();
+
+        // Update chat title from first user prompt
+        if (chat.messages.length === 0) {
+          chat.title = text.length > 36 ? text.slice(0, 36).trim() + '…' : text;
+        }
+
+        // Push user message
+        chat.messages.push({
+          role: 'user',
+          text,
+          timestamp: Date.now(),
+        });
+        chat.updatedAt = Date.now();
+
+        // Move active chat to top of history
+        state.chats.sort((a, b) => b.updatedAt - a.updatedAt);
+        saveChats();
+
+        // Clear input
+        els.messageInput.value = '';
+        autoResizeTextarea();
+
+        // Start generation
+        state.abortController = new AbortController();
+        setGeneratingUI(true);
+        renderSidebar();
+        renderActiveChat();
+
+        try {
+          const persona = PERSONAS[chat.persona] || PERSONAS.general;
+          const aiReply = await fetchGeminiReply(
+            chat.messages,
+            persona.systemPrompt,
+            state.abortController.signal
+          );
+
+          chat.messages.push({
+            role: 'model',
+            text: aiReply,
+            timestamp: Date.now(),
+          });
+          chat.updatedAt = Date.now();
+          saveChats();
+        } catch (err) {
+          if (err.name === 'AbortError') {
+            showToast('Generation stopped');
+          } else {
+            showError(err.message || 'Failed to connect to Gemini API. Please try again.');
+          }
+        } finally {
+          state.abortController = null;
+          setGeneratingUI(false);
+          renderActiveChat();
+          els.messageInput.focus();
+        }
+      }
+
+      /**
+       * Abort an in-flight AI generation request.
+       */
+      function stopGeneration() {
+        if (state.abortController) {
+          state.abortController.abort();
+        }
+      }
+
+      // =========================================================================
+      // 8. SIDEBAR RESPONSIVENESS & EVENT LISTENERS
+      // =========================================================================
+
+      function openMobileSidebar() {
+        els.sidebar.classList.remove('-translate-x-full');
+        els.sidebarBackdrop.classList.remove('hidden');
+      }
+
+      function closeMobileSidebar() {
+        els.sidebar.classList.add('-translate-x-full');
+        els.sidebarBackdrop.classList.add('hidden');
+      }
+
+      function toggleDesktopSidebar() {
+        state.sidebarCollapsedDesktop = !state.sidebarCollapsedDesktop;
+        if (state.sidebarCollapsedDesktop) {
+          els.sidebar.classList.add('lg:hidden');
+        } else {
+          els.sidebar.classList.remove('lg:hidden');
+        }
+      }
+
+      // Sidebar & Header Buttons
+      els.newChatBtn.addEventListener('click', () => createNewChat(true));
+      els.mobileMenuBtn.addEventListener('click', openMobileSidebar);
+      els.closeSidebarMobileBtn.addEventListener('click', closeMobileSidebar);
+      els.sidebarBackdrop.addEventListener('click', closeMobileSidebar);
+      els.desktopSidebarToggle.addEventListener('click', toggleDesktopSidebar);
+      els.headerClearBtn.addEventListener('click', clearActiveChat);
+      els.dismissErrorBtn.addEventListener('click', hideError);
+
+      // Persona Selector
+      els.personaSelect.addEventListener('change', () => {
+        const chat = getActiveChat();
+        if (chat) {
+          chat.persona = els.personaSelect.value;
+          saveChats();
+        }
+        const meta = PERSONAS[els.personaSelect.value] || PERSONAS.general;
+        els.emptyPersonaDesc.textContent = meta.desc;
+        showToast(`Switched to ${meta.name}`);
+      });
+
+      // Starter Prompt Cards
+      document.querySelectorAll('.starter-card').forEach((card) => {
+        card.addEventListener('click', () => {
+          const prompt = card.getAttribute('data-prompt');
+          if (prompt) sendMessage(prompt);
+        });
+      });
+
+      // Delegated "Copy Code" Button Handler inside Messages
+      els.messagesList.addEventListener('click', (e) => {
+        const btn = e.target.closest('.copy-code-btn');
+        if (!btn) return;
+        const encoded = btn.getAttribute('data-copy-code');
+        if (!encoded) return;
+        const rawCode = decodeURIComponent(encoded);
+        const copied = copyToClipboard(rawCode);
+        if (copied) {
+          const original = btn.innerHTML;
+          btn.textContent = '✓ Copied!';
+          btn.classList.add('text-emerald-300');
+          setTimeout(() => {
+            btn.innerHTML = original;
+            btn.classList.remove('text-emerald-300');
+          }, 1600);
+        } else {
+          showToast('Could not copy code');
+        }
+      });
+
+      // Input & Send / Stop Controls
+      els.messageInput.addEventListener('input', autoResizeTextarea);
+      els.messageInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          sendMessage();
+        }
+      });
+      els.sendBtn.addEventListener('click', () => sendMessage());
+      els.stopBtn.addEventListener('click', stopGeneration);
+
+      // =========================================================================
+      // 9. INITIALIZE APP
+      // =========================================================================
+      window.addEventListener('DOMContentLoaded', () => {
+        loadChats();
+        renderSidebar();
+        renderActiveChat();
+        autoResizeTextarea();
+      });
+    })();
+  </script>
+</body>
+</html>
